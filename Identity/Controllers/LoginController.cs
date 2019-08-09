@@ -4,9 +4,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Identity.Controllers
@@ -32,7 +36,6 @@ namespace Identity.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (ModelState.IsValid)
@@ -42,8 +45,28 @@ namespace Identity.Controllers
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
+                    //Add Claims
+                    var claims = new[]
+                                {
+                        new Claim(JwtRegisteredClaimNames.UniqueName, model.Email),
+                        new Claim(JwtRegisteredClaimNames.Sub, "data"),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                    };
+                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("rlyaKithdrYVl6Z80ODU350md")); //Secret
+                    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                    var token = new JwtSecurityToken("https://localhost:44323",
+                               "https://localhost:44323",
+                               claims,
+                               expires: DateTime.Now.AddMinutes(30),
+                               signingCredentials: creds);
+
                     _logger.LogInformation("User logged in.");
-                    return Ok();
+                    return Ok(new
+                    {
+                        access_token = new JwtSecurityTokenHandler().WriteToken(token),
+                        expires_in = DateTime.Now.AddMinutes(30),
+                        token_type = "bearer"
+                    });
                 }
                 if (result.IsLockedOut)
                 {

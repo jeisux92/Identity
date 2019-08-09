@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Identity.Data;
 using Identity.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -36,6 +37,13 @@ namespace Identity
             services.AddIdentity<ApplicationUser, IdentityRole>()
                     .AddEntityFrameworkStores<ApplicationDbContext>()
                     .AddDefaultTokenProviders();
+
+            services.AddAuthentication().AddJwtBearer(options =>
+            {
+                options.Audience = "https://localhost:44323";
+                options.Authority = "https://localhost:44323";
+            });
+
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
