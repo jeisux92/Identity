@@ -43,11 +43,15 @@ namespace Identity.Controllers
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+                var app = await _userManager.FindByEmailAsync(model.Email);
+                var tol = await _userManager.GetRolesAsync(app);
                 if (result.Succeeded)
                 {
+                    string name = model.Email == "jei.sum41@gmail.com" ? "Admin" : "Other";
                     //Add Claims
                     var claims = new[]
                                 {
+                        new Claim(ClaimTypes.Role,name),
                         new Claim(JwtRegisteredClaimNames.UniqueName, model.Email),
                         new Claim(JwtRegisteredClaimNames.Sub, "data"),
                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
